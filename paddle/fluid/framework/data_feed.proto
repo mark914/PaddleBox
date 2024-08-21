@@ -53,4 +53,5 @@ message DataFeedDesc {
   optional GraphConfig graph_config = 10;
   optional float sample_rate = 11 [ default = 1.0 ];
   optional string index_parser = 12;
+  optional string ads_offset = 13;
 }

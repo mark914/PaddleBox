@@ -3089,6 +3089,7 @@ void SlotPaddleBoxDataFeed::Init(const DataFeedDesc& data_feed_desc) {
   input_type_ = data_feed_desc.input_type();
 
   rank_offset_name_ = data_feed_desc.rank_offset();
+  ads_offset_name_ = data_feed_desc.ads_offset();
   pv_batch_size_ = data_feed_desc.pv_batch_size();
 
   // fprintf(stdout, "rank_offset_name: [%s]\n", rank_offset_name_.c_str());
@@ -3212,6 +3213,7 @@ void SlotPaddleBoxDataFeed::AssignFeedVar(const Scope& scope) {
   // set rank offset memory
   if (enable_pv_merge_) {
     rank_offset_ = scope.FindVar(rank_offset_name_)->GetMutable<LoDTensor>();
+    ads_offset_ = scope.FindVar(ads_offset_name_)->GetMutable<LoDTensor>();
   }
 }
 void SlotPaddleBoxDataFeed::PutToFeedPvVec(const SlotPvInstance* pvs, int num) {
@@ -3221,6 +3223,7 @@ void SlotPaddleBoxDataFeed::PutToFeedPvVec(const SlotPvInstance* pvs, int num) {
   int ins_num = pack_->ins_num();
   int pv_num = pack_->pv_num();
   GetRankOffsetGPU(pv_num, ins_num);
+  GetAdsOffsetGPU(pv_num, ins_num);
   BuildSlotBatchGPU(ins_num);
 #else
   int ins_number = 0;
@@ -3585,6 +3588,17 @@ void SlotPaddleBoxDataFeed::GetRankOffset(const SlotPvInstance* pv_vec,
   int* rank_offset = rank_offset_mat.data();
   int* tensor_ptr = rank_offset_->mutable_data<int>({row, col}, this->place_);
   CopyToFeedTensor(tensor_ptr, rank_offset, row * col * sizeof(int));
+}
+
+void SlotPaddleBoxDataFeed::GetAdsOffsetGPU(const int pv_num, const int ins_num) {
+    auto stream = dynamic_cast<phi::GPUContext*>(
+          platform::DeviceContextPool::Instance().Get(this->place_))
+          ->stream();
+    auto& buf = pack_->cpu_value();
+    int* tensor_ptr = ads_offset_->mutable_data<int>(phi::make_ddim({pv_num + 1, 1}), this->place_);
+    CUDA_CHECK(cudaMemcpyAsync(tensor_ptr, buf.h_ad_offset.data(), buf.h_ad_offset.size() * sizeof(int), cudaMemcpyHostToDevice, stream));
+    CUDA_CHECK(cudaStreamSynchronize(stream));
+    VLOG(1) << "this thread id is " << thread_id_ << ", this place is" << this->place_ << ", ads_offset_ is " << *ads_offset_;
 }
 
 class SlotInsParserMgr {

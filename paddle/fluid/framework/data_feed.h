@@ -1118,6 +1118,7 @@ class DataFeed {
   std::vector<LoDTensor*> feed_vec_;
 
   LoDTensor* rank_offset_;
+  LoDTensor* ads_offset_;
 
   // the batch size defined by user
   int default_batch_size_;
@@ -2123,6 +2124,7 @@ class SlotPaddleBoxDataFeed : public DataFeed {
   void BuildSlotBatchGPU(const int ins_num);
   void GetRankOffsetGPU(const int pv_num, const int ins_num);
   void GetRankOffset(const SlotPvInstance* pv_vec, int pv_num, int ins_number);
+  void GetAdsOffsetGPU(const int pv_num, const int ins_num);
   bool ParseOneInstance(const std::string& line, SlotRecord* rec);
 
  protected:
@@ -2178,6 +2180,7 @@ class SlotPaddleBoxDataFeed : public DataFeed {
   size_t float_total_dims_size_ = 0;
 
   std::string rank_offset_name_;
+  std::string ads_offset_name_;
   int pv_batch_size_ = 0;
   int use_slot_size_ = 0;
   int float_use_slot_size_ = 0;

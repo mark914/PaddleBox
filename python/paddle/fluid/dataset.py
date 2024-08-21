@@ -129,6 +129,12 @@ class DatasetBase(object):
 
         """
         self.proto_desc.rank_offset = rank_offset
+        
+    def set_ads_offset(self, ads_offset):
+        """
+        set ads_offset
+        """
+        self.proto_desc.ads_offset = ads_offset
 
     def set_fea_eval(self, record_candidate_size, fea_eval=True):
         """
